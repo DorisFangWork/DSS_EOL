@@ -14,6 +14,9 @@ from modules.normalize import normalize
 from modules.scoring import score_dimensions
 from modules.mcda import recommend
 
+import os
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
 st.set_page_config(page_title="EV Battery End-of-Life Decision Support", layout="wide")
 
 # ---- Global style polish: larger base font, tighter headings, more breathing room ----
@@ -44,7 +47,9 @@ PATH_COLORS = {
 
 
 @st.cache_data
-def load_config(path="config.yaml"):
+def load_config(path=None):
+    if path is None:
+        path = os.path.join(BASE_DIR, "config.yaml")
     with open(path, "r", encoding="utf-8") as f:
         return yaml.safe_load(f)
 
@@ -62,7 +67,7 @@ with st.sidebar:
 
 cfg["dimension_weights"] = {"value": w_value, "risk": w_risk, "liquidity": w_liq, "time_window": w_time}
 
-csv_path = uploaded if uploaded else "data/batteries.csv"
+csv_path = uploaded if uploaded else os.path.join(BASE_DIR, "data", "batteries.csv")
 df = load_batteries(csv_path)
 df = normalize(df, cfg)
 df = score_dimensions(df, cfg)
@@ -240,6 +245,32 @@ selectPath(0);
 html_filled = HTML.replace("__PAYLOAD__", json.dumps(payload, ensure_ascii=False))
 components.html(html_filled, height=640, scrolling=True)
 
+# ---- Ask about a recommendation (collapsible, native Streamlit) ----
+with st.expander("Ask about a recommendation", expanded=False):
+    sel = st.selectbox("Select a battery", result["battery_id"].tolist())
+    row = result[result["battery_id"] == sel].iloc[0]
+
+    low_conf = row["confidence"] < 0.4
+    c1, c2 = st.columns([2, 1])
+    with c1:
+        st.markdown(f"**Recommended pathway:** {row['top_choice']}")
+        st.markdown(f"**Runner-up:** {row['second_choice']}")
+        st.markdown(f"**Rationale:** {row['reason']}")
+    with c2:
+        if low_conf:
+            st.warning(f"Needs review — confidence {int(row['confidence']*100)}%")
+        else:
+            st.success(f"Confidence {int(row['confidence']*100)}%")
+
+    st.caption("Four-dimension scores")
+    score_df = pd.DataFrame({
+        "Dimension": ["Residual value", "Safety & compliance", "Market liquidity", "Time window"],
+        "Score": [row["value_score"], row["risk_score"], row["liquidity_score"], row["time_window_score"]],
+    })
+    st.dataframe(score_df, use_container_width=True, hide_index=True,
+                 column_config={"Score": st.column_config.ProgressColumn(
+                     "Score", min_value=0.0, max_value=1.0, format="%.2f")})
+
 # ---- Batch optimization (collapsible, native Streamlit) ----
 with st.expander("Batch optimization  ·  allocate under capacity limits", expanded=False):
     c1, c2, c3, c4 = st.columns(4)
@@ -318,30 +349,3 @@ new Chart(document.getElementById('optpie'), {
         components.html(donut_filled, height=270, scrolling=False)
 
         st.dataframe(alloc.drop(columns=["path_key"]), use_container_width=True, hide_index=True)
-
-# ---- Ask about a recommendation (collapsible, native Streamlit) ----
-with st.expander("Ask about a recommendation", expanded=False):
-    sel = st.selectbox("Select a battery", result["battery_id"].tolist())
-    row = result[result["battery_id"] == sel].iloc[0]
-
-    low_conf = row["confidence"] < 0.4
-    c1, c2 = st.columns([2, 1])
-    with c1:
-        st.markdown(f"**Recommended pathway:** {row['top_choice']}")
-        st.markdown(f"**Runner-up:** {row['second_choice']}")
-        st.markdown(f"**Rationale:** {row['reason']}")
-    with c2:
-        if low_conf:
-            st.warning(f"Needs review — confidence {int(row['confidence']*100)}%")
-        else:
-            st.success(f"Confidence {int(row['confidence']*100)}%")
-
-    st.caption("Four-dimension scores")
-    score_df = pd.DataFrame({
-        "Dimension": ["Residual value", "Safety & compliance", "Market liquidity", "Time window"],
-        "Score": [row["value_score"], row["risk_score"], row["liquidity_score"], row["time_window_score"]],
-    })
-    st.dataframe(score_df, use_container_width=True, hide_index=True,
-                 column_config={"Score": st.column_config.ProgressColumn(
-                     "Score", min_value=0.0, max_value=1.0, format="%.2f")})
-
