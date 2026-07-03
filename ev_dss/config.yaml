@@ -1,0 +1,43 @@
+normalization:
+  soh_pct:        {min: 40,  max: 100, higher_is_better: true}
+  cycle_count:    {min: 0,   max: 5000, higher_is_better: false}
+  avg_temp_c:     {min: 20,  max: 50,  higher_is_better: false}
+  fault_count:    {min: 0,   max: 8,   higher_is_better: false}
+  age_years:      {min: 0,   max: 15,  higher_is_better: false}
+  residual_ratio: {min: 0,   max: 1,   higher_is_better: true}
+
+dimension_weights:
+  value:      0.15
+  risk:       0.30
+  liquidity:  0.40
+  time_window: 0.15
+
+scoring:
+  value:       {residual_ratio: 0.6, soh_pct: 0.4}
+  risk:        {fault_count: 0.5, avg_temp_c: 0.3, age_years: 0.2}
+  liquidity:   {soh_pct: 0.5, cycle_count: 0.5}
+  time_window: {age_years: 0.7, soh_pct: 0.3}
+
+pathways:
+  reuse:
+    label: "Second-life reuse (stationary storage)"
+    gates: {soh_pct_norm: 0.60, risk_norm: 0.55}
+    profile: {value: 0.75, risk: 0.85, liquidity: 0.5, time_window: 0.6}
+  remanufacture:
+    label: "Remanufacture (disassemble & rebuild)"
+    gates: {soh_pct_norm: 0.40, risk_norm: 0.45}
+    profile: {value: 0.65, risk: 0.7, liquidity: 0.45, time_window: 0.55}
+  resell:
+    label: "Resell (secondary market)"
+    gates: {soh_pct_norm: 0.68, risk_norm: 0.60}
+    profile: {value: 0.85, risk: 0.8, liquidity: 0.95, time_window: 0.9}
+  recycle:
+    label: "Material recycling (metal recovery)"
+    gates: {soh_pct_norm: 0.0, risk_norm: 0.0}
+    profile: {value: 0.25, risk: 0.4, liquidity: 0.6, time_window: 0.35}
+
+criteria_direction:
+  value:       benefit
+  risk:        benefit
+  liquidity:   benefit
+  time_window: benefit

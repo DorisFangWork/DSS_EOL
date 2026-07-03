@@ -1,0 +1,11 @@
+battery_id,chemistry,age_years,soh_pct,cycle_count,avg_temp_c,fault_count,original_cost_usd,book_value_usd,location
+PACK-001,NMC,6,82,1200,28,0,9000,2200,SG-Jurong
+PACK-002,LFP,8,74,2400,31,1,7500,1400,SG-Tuas
+PACK-003,NMC,5,88,900,26,0,9500,3100,SG-Jurong
+PACK-004,NMC,9,61,3100,38,3,8800,600,SG-Woodlands
+PACK-005,LFP,7,79,1800,29,0,7200,1800,SG-Tuas
+PACK-006,NMC,10,54,3600,41,5,9000,300,SG-Woodlands
+PACK-007,LFP,4,91,600,25,0,7800,3400,SG-Jurong
+PACK-008,NMC,8,68,2600,35,2,8600,900,SG-Tuas
+PACK-009,LFP,6,83,1500,27,0,7400,2100,SG-Jurong
+PACK-010,NMC,11,48,4200,43,6,9200,150,SG-Woodlands
