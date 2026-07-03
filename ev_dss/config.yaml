@@ -7,9 +7,9 @@ normalization:
   residual_ratio: {min: 0,   max: 1,   higher_is_better: true}
 
 dimension_weights:
-  value:      0.15
+  value:      0.35
   risk:       0.30
-  liquidity:  0.40
+  liquidity:  0.20
   time_window: 0.15
 
 scoring:

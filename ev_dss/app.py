@@ -240,6 +240,32 @@ selectPath(0);
 html_filled = HTML.replace("__PAYLOAD__", json.dumps(payload, ensure_ascii=False))
 components.html(html_filled, height=640, scrolling=True)
 
+# ---- Ask about a recommendation (collapsible, native Streamlit) ----
+with st.expander("Ask about a recommendation", expanded=False):
+    sel = st.selectbox("Select a battery", result["battery_id"].tolist())
+    row = result[result["battery_id"] == sel].iloc[0]
+
+    low_conf = row["confidence"] < 0.4
+    c1, c2 = st.columns([2, 1])
+    with c1:
+        st.markdown(f"**Recommended pathway:** {row['top_choice']}")
+        st.markdown(f"**Runner-up:** {row['second_choice']}")
+        st.markdown(f"**Rationale:** {row['reason']}")
+    with c2:
+        if low_conf:
+            st.warning(f"Needs review — confidence {int(row['confidence']*100)}%")
+        else:
+            st.success(f"Confidence {int(row['confidence']*100)}%")
+
+    st.caption("Four-dimension scores")
+    score_df = pd.DataFrame({
+        "Dimension": ["Residual value", "Safety & compliance", "Market liquidity", "Time window"],
+        "Score": [row["value_score"], row["risk_score"], row["liquidity_score"], row["time_window_score"]],
+    })
+    st.dataframe(score_df, use_container_width=True, hide_index=True,
+                 column_config={"Score": st.column_config.ProgressColumn(
+                     "Score", min_value=0.0, max_value=1.0, format="%.2f")})
+
 # ---- Batch optimization (collapsible, native Streamlit) ----
 with st.expander("Batch optimization  ·  allocate under capacity limits", expanded=False):
     c1, c2, c3, c4 = st.columns(4)
@@ -318,29 +344,3 @@ new Chart(document.getElementById('optpie'), {
         components.html(donut_filled, height=270, scrolling=False)
 
         st.dataframe(alloc.drop(columns=["path_key"]), use_container_width=True, hide_index=True)
-
-# ---- Ask about a recommendation (collapsible, native Streamlit) ----
-with st.expander("Ask about a recommendation", expanded=False):
-    sel = st.selectbox("Select a battery", result["battery_id"].tolist())
-    row = result[result["battery_id"] == sel].iloc[0]
-
-    low_conf = row["confidence"] < 0.4
-    c1, c2 = st.columns([2, 1])
-    with c1:
-        st.markdown(f"**Recommended pathway:** {row['top_choice']}")
-        st.markdown(f"**Runner-up:** {row['second_choice']}")
-        st.markdown(f"**Rationale:** {row['reason']}")
-    with c2:
-        if low_conf:
-            st.warning(f"Needs review — confidence {int(row['confidence']*100)}%")
-        else:
-            st.success(f"Confidence {int(row['confidence']*100)}%")
-
-    st.caption("Four-dimension scores")
-    score_df = pd.DataFrame({
-        "Dimension": ["Residual value", "Safety & compliance", "Market liquidity", "Time window"],
-        "Score": [row["value_score"], row["risk_score"], row["liquidity_score"], row["time_window_score"]],
-    })
-    st.dataframe(score_df, use_container_width=True, hide_index=True,
-                 column_config={"Score": st.column_config.ProgressColumn(
-                     "Score", min_value=0.0, max_value=1.0, format="%.2f")})
